@@ -19,7 +19,7 @@ func main() {
 	addr := env.GetString("ADDR", "")
 	if addr == "" {
 		port := env.GetString("PORT", "8080")
-		addr = ":" + port
+		addr = port
 	}
 
 	cfg := config{
