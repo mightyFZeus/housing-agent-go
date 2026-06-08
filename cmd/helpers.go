@@ -19,18 +19,15 @@ func ToFloat32Vector(v []float64) []float32 {
 }
 
 func (app *application) openAiClient() (*openai.Client, string) {
-	apiKey := env.GetString("OPENROUTER_API_KEY", "")
+	apiKey := env.GetString("OPEN_AI_API_KEY", "")
 	if apiKey == "" {
-		log.Printf("OPENROUTER_API_KEY environment variable is not set")
+		log.Printf("OPEN_AI_API_KEY environment variable is not set")
 		return nil, ""
 	}
 
-	baseURL := env.GetString("OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1")
-
-	model := env.GetString("OPENROUTER_API_MODEL", "text-embedding-3-small")
+	model := env.GetString("OPEN_AI_EMBEDDING_MODEL", "text-embedding-3-small")
 
 	client := openai.NewClient(
-		option.WithBaseURL(baseURL),
 		option.WithAPIKey(apiKey),
 	)
 	return &client, model

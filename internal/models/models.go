@@ -6,9 +6,10 @@ import (
 )
 
 type Document struct {
-	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Content   string
-	Embedding pgvector.Vector `gorm:"type:vector"`
+	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Content    string
+	Embedding  pgvector.Vector `gorm:"type:vector"`
+	Similarity float64         `gorm:"-"`
 }
 
 type RawChunk struct {

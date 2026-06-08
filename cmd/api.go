@@ -46,10 +46,6 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
 
-	// secret := env.GetString("SECRET_KEY", "jMdftY0vIiVLTXChDeMYsMo62Jk6XmUnquEfuslkD0xapZo6HWRtq2scWZlyY1cZck4wa5PNQXSnGNdTJs67hw=")
-
-	// Public
-
 	r.Get("/search", app.SearchHandler)
 	r.Get("/health", app.HealthHandler)
 
@@ -60,8 +56,8 @@ func (app *application) run(mux http.Handler) error {
 	srv := &http.Server{
 		Addr:         app.config.addr,
 		Handler:      mux,
-		WriteTimeout: time.Second * 10,
-		ReadTimeout:  time.Second * 10,
+		WriteTimeout: 70 * time.Second,
+		ReadTimeout:  10 * time.Second,
 		IdleTimeout:  time.Minute,
 	}
 

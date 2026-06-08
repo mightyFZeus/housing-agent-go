@@ -44,5 +44,15 @@ WHERE c.relname = 'documents'
 		}
 	}
 
+	if typmod != -1 {
+		if err := db.Exec(`
+			CREATE INDEX IF NOT EXISTS documents_embedding_hnsw_idx
+			ON documents
+			USING hnsw (embedding vector_l2_ops);
+		`).Error; err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

@@ -31,8 +31,8 @@ func (ds *DocumentStore) Get(ctx context.Context, qVec pgvector.Vector) ([]*mode
 		Raw(`
 			SELECT *
 			FROM documents
-			ORDER BY embedding <-> ?
-			LIMIT 5
+			ORDER BY embedding <->  $1
+			LIMIT 3
 		`, qVec).
 		Scan(&docs).Error
 
