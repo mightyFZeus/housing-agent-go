@@ -10,6 +10,7 @@ type Document struct {
 	Content    string
 	Embedding  pgvector.Vector `gorm:"type:vector"`
 	Similarity float64         `gorm:"-"`
+	Distance   float64         `gorm:"column:distance"`
 }
 
 type RawChunk struct {
@@ -19,4 +20,11 @@ type RawChunk struct {
 	Text    string `json:"text"`
 	Source  string `json:"source"`
 	Page    int    `json:"page"`
+}
+
+type QueryLog struct {
+	Question       string
+	RetrievedChunk string
+	Distance       float64
+	Answer         string
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"strings"
 	"sync"
@@ -17,6 +18,7 @@ import (
 	"github.com/mightyfzeus/housing-agent/internal/models"
 	"github.com/openai/openai-go/v2"
 	"github.com/pgvector/pgvector-go"
+	"go.uber.org/zap"
 )
 
 type SearchRequest struct {
@@ -162,7 +164,23 @@ func (app *application) SearchHandler(w http.ResponseWriter, r *http.Request) {
 
 	// chunk context before seding to llm model
 	var context strings.Builder
+	var bestDistance float64 = math.MaxFloat64
+
+	if context.Len() == 0 {
+		fmt.Fprintf(w, "data: I don't know\n\n")
+		flusher.Flush()
+		return
+	}
+
 	for _, d := range doc {
+		if d.Distance > 0.30 {
+			continue
+		}
+
+		if d.Distance < bestDistance {
+			bestDistance = d.Distance
+		}
+
 		context.WriteString("- ")
 		context.WriteString(d.Content)
 		context.WriteString("\n")
@@ -179,12 +197,24 @@ Context:
 %s
 Question:
 %s
-`, context.String(), query)),
+`, context.String(), query.Query)),
 		},
 	})
 
 	var full strings.Builder
 
+	answer := full.String()
+
+	queryLog := models.QueryLog{
+		Question:       query.Query,
+		RetrievedChunk: context.String(),
+		Distance:       bestDistance,
+		Answer:         answer,
+	}
+	app.logger.Info(
+		"log before streaming",
+		zap.Any("queryLog", queryLog),
+	)
 	for stream.Next() {
 		event := stream.Current()
 
@@ -206,6 +236,11 @@ Question:
 		flusher.Flush()
 		return
 	}
+
+	app.logger.Info(
+		"log after streaming",
+		zap.Any("queryLog", queryLog),
+	)
 
 	// optional end marker
 	fmt.Fprintf(w, "data: [DONE]\n\n")

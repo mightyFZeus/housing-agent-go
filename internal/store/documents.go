@@ -29,10 +29,13 @@ func (ds *DocumentStore) Get(ctx context.Context, qVec pgvector.Vector) ([]*mode
 
 	err := ds.db.WithContext(ctx).
 		Raw(`
-			SELECT *
-			FROM documents
-			ORDER BY embedding <->  $1
-			LIMIT 3
+			SELECT
+    id,
+    content,
+    embedding <=> $1 AS distance
+FROM documents
+ORDER BY embedding <=> $1
+LIMIT 5;
 		`, qVec).
 		Scan(&docs).Error
 
