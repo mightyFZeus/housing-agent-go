@@ -55,7 +55,7 @@ func (app *application) mount() http.Handler {
 		MaxAge:           300,
 	}))
 
-	r.Get("/search", app.SearchHandler)
+	r.Post("/search", app.SearchHandler)
 	r.Get("/health", app.HealthHandler)
 
 	return r
