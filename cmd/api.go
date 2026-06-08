@@ -44,6 +44,7 @@ func (app *application) mount() http.Handler {
 	origins := []string{
 		"https://housing-agent-fe.netlify.app",
 		"http://localhost:5173",
+		"https://housing-agent-go-fe.vercel.app",
 	}
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
