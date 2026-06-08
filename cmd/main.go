@@ -24,7 +24,7 @@ func main() {
 
 	cfg := config{
 		addr:   addr,
-		apiUrl: env.GetString("https://housing-agent-go.onrender.com", "localhost:8080"),
+		apiUrl: env.GetString("API_URL", "localhost:8080"),
 		db: dbConfig{
 			dbAddr:       env.GetString("DB_ADDR", "postgres://admin:adminpassword@localhost:5433/housing_agent_db?sslmode=disable"),
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 25),

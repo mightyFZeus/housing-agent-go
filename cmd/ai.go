@@ -18,7 +18,6 @@ import (
 	"github.com/mightyfzeus/housing-agent/internal/models"
 	"github.com/openai/openai-go/v2"
 	"github.com/pgvector/pgvector-go"
-	"go.uber.org/zap"
 )
 
 type SearchRequest struct {
@@ -166,24 +165,14 @@ func (app *application) SearchHandler(w http.ResponseWriter, r *http.Request) {
 	var context strings.Builder
 	var bestDistance float64 = math.MaxFloat64
 
-	if context.Len() == 0 {
-		fmt.Fprintf(w, "data: I don't know\n\n")
-		flusher.Flush()
-		return
-	}
-
 	for _, d := range doc {
-		if d.Distance > 0.30 {
-			continue
-		}
+		context.WriteString("- ")
+		context.WriteString(d.Content)
+		context.WriteString("\n")
 
 		if d.Distance < bestDistance {
 			bestDistance = d.Distance
 		}
-
-		context.WriteString("- ")
-		context.WriteString(d.Content)
-		context.WriteString("\n")
 	}
 
 	// stream chat
@@ -203,18 +192,6 @@ Question:
 
 	var full strings.Builder
 
-	answer := full.String()
-
-	queryLog := models.QueryLog{
-		Question:       query.Query,
-		RetrievedChunk: context.String(),
-		Distance:       bestDistance,
-		Answer:         answer,
-	}
-	app.logger.Info(
-		"log before streaming",
-		zap.Any("queryLog", queryLog),
-	)
 	for stream.Next() {
 		event := stream.Current()
 
@@ -237,10 +214,21 @@ Question:
 		return
 	}
 
-	app.logger.Info(
-		"log after streaming",
-		zap.Any("queryLog", queryLog),
-	)
+	answer := full.String()
+
+	queryLog := models.QueryLog{
+		Question:       query.Query,
+		RetrievedChunk: context.String(),
+		Distance:       bestDistance,
+		Similarity:     classifyDistance(bestDistance),
+		Answer:         answer,
+	}
+	queryLogJSON, marshalErr := json.MarshalIndent(queryLog, "", "  ")
+	if marshalErr != nil {
+		app.logger.Errorf("failed to marshal rag query log: %v", marshalErr)
+	} else {
+		log.Printf("rag_query:\n%s", queryLogJSON)
+	}
 
 	// optional end marker
 	fmt.Fprintf(w, "data: [DONE]\n\n")

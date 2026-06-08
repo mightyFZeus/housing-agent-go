@@ -23,8 +23,9 @@ type RawChunk struct {
 }
 
 type QueryLog struct {
-	Question       string
-	RetrievedChunk string
-	Distance       float64
-	Answer         string
+	Question       string  `json:"question"`
+	RetrievedChunk string  `json:"retrieved_chunk"`
+	Distance       float64 `json:"distance"`
+	Similarity     string  `json:"similarity"`
+	Answer         string  `json:"answer"`
 }

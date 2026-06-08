@@ -73,3 +73,20 @@ func (app *application) sanitizeContext(text string) string {
 	}
 	return text
 }
+
+func classifyDistance(d float64) string {
+	switch {
+	case d <= 0.10:
+		return "near identical (excellent match)"
+	case d <= 0.20:
+		return "very strong match"
+	case d <= 0.30:
+		return "good match"
+	case d <= 0.40:
+		return "weak match"
+	case d <= 0.60:
+		return "poor match"
+	default:
+		return "irrelevant"
+	}
+}
