@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -17,6 +18,10 @@ import (
 	"github.com/openai/openai-go/v2"
 	"github.com/pgvector/pgvector-go"
 )
+
+type SearchRequest struct {
+	Query string `json:"query"`
+}
 
 func (app *application) EmbedDocuments() {
 	ctx := context.Background()
@@ -105,20 +110,22 @@ func (app *application) SearchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query().Get("query")
-	if query == "" {
-		app.badRequestResponse(w, r, errors.New("query is required"))
-		return
-	}
-	if err := app.validateQuery(query); err != nil {
+	var query SearchRequest
+	if err := json.NewDecoder(r.Body).Decode(&query); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
-	if app.isInjectionAttempt(query) {
+
+	if query.Query == "" {
+		app.badRequestResponse(w, r, errors.New("query is required"))
+		return
+	}
+
+	if app.isInjectionAttempt(query.Query) {
 		app.badRequestResponse(w, r, errors.New("query not allowed"))
 		return
 	}
-	query = app.sanitizeContext(query)
+	query.Query = app.sanitizeContext(query.Query)
 
 	client, model := app.openAiClient()
 	if client == nil {
@@ -130,7 +137,7 @@ func (app *application) SearchHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := client.Embeddings.New(ctx, openai.EmbeddingNewParams{
 		Model: model,
 		Input: openai.EmbeddingNewParamsInputUnion{
-			OfString: openai.String(query),
+			OfString: openai.String(query.Query),
 		},
 	})
 	if err != nil || len(resp.Data) == 0 {
