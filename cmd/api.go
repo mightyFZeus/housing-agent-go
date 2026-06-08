@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/mightyfzeus/housing-agent/internal/store"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
@@ -45,6 +46,14 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://hosuing-agent.netlify.app"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	}))
 
 	r.Get("/search", app.SearchHandler)
 	r.Get("/health", app.HealthHandler)
