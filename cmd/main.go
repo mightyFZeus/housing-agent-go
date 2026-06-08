@@ -16,9 +16,14 @@ func main() {
 	if err != nil {
 		log.Println("⚠️ Could not load .env file, falling back to defaults")
 	}
+	addr := env.GetString("ADDR", "")
+	if addr == "" {
+		port := env.GetString("PORT", "8080")
+		addr = ":" + port
+	}
 
 	cfg := config{
-		addr:   env.GetString("ADDR", ":8080"),
+		addr:   addr,
 		apiUrl: env.GetString("API_URL", "localhost:8080"),
 		db: dbConfig{
 			dbAddr:       env.GetString("DB_ADDR", "postgres://admin:adminpassword@localhost:5433/housing_agent_db?sslmode=disable"),
