@@ -42,7 +42,7 @@ type middleWareConfig struct {
 func (app *application) mount() http.Handler {
 
 	origins := []string{
-		"https://housing-agent.netlify.app",
+		"https://housing-agent-fe.netlify.app",
 		"http://localhost:5173",
 	}
 	r := chi.NewRouter()
