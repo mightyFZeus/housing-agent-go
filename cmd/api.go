@@ -40,6 +40,11 @@ type middleWareConfig struct {
 }
 
 func (app *application) mount() http.Handler {
+
+	origins := []string{
+		"https://housing-agent.netlify.app",
+		"http://localhost:5173",
+	}
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.RequestID)
@@ -48,7 +53,7 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://hosuing-agent.netlify.app"},
+		AllowedOrigins:   origins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: false,
