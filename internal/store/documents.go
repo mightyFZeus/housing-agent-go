@@ -31,29 +31,46 @@ func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector
 	err := ds.db.WithContext(ctx).
 		Raw(`
 			WITH vector_matches AS (
-				SELECT id, content, embedding <=> $1 AS distance,
-				       ROW_NUMBER() OVER (ORDER BY embedding <=> $1) as rank
+				SELECT
+					id,
+					content,
+					embedding <=> $1 AS distance,
+					ROW_NUMBER() OVER (ORDER BY embedding <=> $1) AS rank
 				FROM documents
-				WHERE (embedding <=> $1) 
+				ORDER BY embedding <=> $1
 				LIMIT 20
 			),
+
 			keyword_matches AS (
-				SELECT id, content, 
-				       ROW_NUMBER() OVER (ORDER BY ts_rank_cd(tsv, plainto_tsquery('english', $2)) DESC) as rank
+				SELECT
+					id,
+					content,
+					ts_rank_cd(tsv, plainto_tsquery('english', $2)) AS score,
+					ROW_NUMBER() OVER (
+						ORDER BY ts_rank_cd(tsv, plainto_tsquery('english', $2)) DESC
+					) AS rank
 				FROM documents
 				WHERE tsv @@ plainto_tsquery('english', $2)
 				LIMIT 20
 			)
-			SELECT 
-				COALESCE(v.id, k.id) as id,
-				COALESCE(v.content, k.content) as content,
-				COALESCE(v.distance, 1.0) as distance, 
-				(COALESCE(1.0 / (60 + v.rank), 0.0) + COALESCE(1.0 / (60 + k.rank), 0.0)) as rrf_score
+
+			SELECT
+				COALESCE(v.id, k.id) AS id,
+				COALESCE(v.content, k.content) AS content,
+
+				COALESCE(v.distance, 1.0) AS distance,
+
+				(
+					COALESCE(1.0 / (10 + v.rank), 0.0) +
+					COALESCE(1.0 / (10 + k.rank), 0.0)
+				) AS rrf_score
+
 			FROM vector_matches v
 			FULL OUTER JOIN keyword_matches k ON v.id = k.id
+
 			ORDER BY rrf_score DESC
 			LIMIT 5;
-		`, qVec, rawQuery). // 2. Added rawQuery right here as the second argument ($2)
+		`, qVec, rawQuery).
 		Scan(&docs).Error
 
 	if err != nil {
