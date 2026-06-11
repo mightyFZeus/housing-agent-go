@@ -10,7 +10,7 @@ import (
 type Document struct {
 	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Content    string
-	Embedding  pgvector.Vector `gorm:"type:vector"`
+	Embedding  pgvector.Vector `gorm:"type:vector(1536)"`
 	Similarity float64         `gorm:"-"`
 	Distance   float64         `gorm:"column:distance"`
 }

@@ -101,9 +101,9 @@ func AutoMigrate(db *gorm.DB) error {
 	if typmod != -1 {
 		if err := db.Exec(`
 			ALTER TABLE documents
-			ALTER COLUMN embedding
-			TYPE vector
-			USING embedding::vector;
+	ALTER COLUMN embedding
+	TYPE vector(1536)
+	USING embedding::vector(1536);
 		`).Error; err != nil {
 			return err
 		}
