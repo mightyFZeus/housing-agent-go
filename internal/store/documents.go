@@ -29,13 +29,29 @@ func (ds *DocumentStore) Get(ctx context.Context, qVec pgvector.Vector) ([]*mode
 
 	err := ds.db.WithContext(ctx).
 		Raw(`
-			SELECT
-    id,
-    content,
-    embedding <=> $1 AS distance
-FROM documents
-ORDER BY embedding <=> $1
-LIMIT 5;
+	WITH vector_matches AS (
+				SELECT id, content, embedding <=> $1 AS distance,
+				       ROW_NUMBER() OVER (ORDER BY embedding <=> $1) as rank
+				FROM documents
+				WHERE (embedding <=> $1) <= 0.45
+				LIMIT 20
+			),
+			keyword_matches AS (
+				SELECT id, content, 
+				       ROW_NUMBER() OVER (ORDER BY ts_rank_cd(tsv, plainto_tsquery('english', $2)) DESC) as rank
+				FROM documents
+				WHERE tsv @@ plainto_tsquery('english', $2)
+				LIMIT 20
+			)
+			SELECT 
+				COALESCE(v.id, k.id) as id,
+				COALESCE(v.content, k.content) as content,
+				COALESCE(v.distance, 1.0) as distance, -- Fallback high distance if keyword-only match
+				(COALESCE(1.0 / (60 + v.rank), 0.0) + COALESCE(1.0 / (60 + k.rank), 0.0)) as rrf_score
+			FROM vector_matches v
+			FULL OUTER JOIN keyword_matches k ON v.id = k.id
+			ORDER BY rrf_score DESC
+			LIMIT 5;
 		`, qVec).
 		Scan(&docs).Error
 

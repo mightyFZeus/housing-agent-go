@@ -76,16 +76,14 @@ func (app *application) sanitizeContext(text string) string {
 
 func classifyDistance(d float64) string {
 	switch {
-	case d <= 0.10:
+	case d <= 0.15:
 		return "near identical (excellent match)"
-	case d <= 0.20:
-		return "very strong match"
 	case d <= 0.30:
-		return "good match"
-	case d <= 0.40:
+		return "strong match"
+	case d <= 0.45:
+		return "acceptable match (formal/legal text)"
+	case d <= 0.55:
 		return "weak match"
-	case d <= 0.60:
-		return "poor match"
 	default:
 		return "irrelevant"
 	}
