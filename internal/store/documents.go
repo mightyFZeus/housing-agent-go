@@ -67,7 +67,7 @@ func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector
 		`, map[string]interface{}{
 			"qVec":     qVec,
 			"rawQuery": rawQuery,
-		}). // Clean map binding instead of gorm.NamedArg
+		}).
 		Scan(&results).Error
 
 	if err != nil {
