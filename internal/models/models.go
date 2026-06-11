@@ -13,7 +13,6 @@ type Document struct {
 	Embedding  pgvector.Vector `gorm:"type:vector(1536)"`
 	Similarity float64         `gorm:"-"`
 	Distance   float64         `gorm:"column:distance"`
-	Score      float64         `gorm:"column:rrf_score"`
 }
 
 type RawChunk struct {
