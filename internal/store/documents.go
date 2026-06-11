@@ -23,8 +23,6 @@ func (ds *DocumentStore) Count(ctx context.Context) (int64, error) {
 	}
 	return count, nil
 }
-
-// 1. Add rawQuery string to the parameters
 func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector.Vector) ([]*models.Result, error) {
 	var results []*models.Result
 
@@ -34,10 +32,10 @@ func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector
 				SELECT
 					id,
 					content,
-					embedding <=> $1 AS distance,
-					ROW_NUMBER() OVER (ORDER BY embedding <=> $1) AS rank
+					embedding <=> @qVec AS distance,
+					ROW_NUMBER() OVER (ORDER BY embedding <=> @qVec) AS rank
 				FROM documents
-				ORDER BY embedding <=> $1
+				ORDER BY embedding <=> @qVec
 				LIMIT 20
 			),
 
@@ -45,32 +43,31 @@ func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector
 				SELECT
 					id,
 					content,
-					ts_rank_cd(tsv, plainto_tsquery('english', $2)) AS score,
+					ts_rank_cd(tsv, plainto_tsquery('english', @rawQuery)) AS score,
 					ROW_NUMBER() OVER (
-						ORDER BY ts_rank_cd(tsv, plainto_tsquery('english', $2)) DESC
+						ORDER BY ts_rank_cd(tsv, plainto_tsquery('english', @rawQuery)) DESC
 					) AS rank
 				FROM documents
-				WHERE tsv @@ plainto_tsquery('english', $2)
+				WHERE tsv @@ plainto_tsquery('english', @rawQuery)
 				LIMIT 20
 			)
 
 			SELECT
 				COALESCE(v.id, k.id) AS id,
 				COALESCE(v.content, k.content) AS content,
-
 				COALESCE(v.distance, 1.0) AS distance,
-
 				(
 					COALESCE(1.0 / (10 + v.rank), 0.0) +
 					COALESCE(1.0 / (10 + k.rank), 0.0)
 				) AS rrf_score
-
 			FROM vector_matches v
 			FULL OUTER JOIN keyword_matches k ON v.id = k.id
-
 			ORDER BY rrf_score DESC
 			LIMIT 5;
-		`, qVec, rawQuery).
+		`, map[string]interface{}{
+			"qVec":     qVec,
+			"rawQuery": rawQuery,
+		}). // Clean map binding instead of gorm.NamedArg
 		Scan(&results).Error
 
 	if err != nil {
