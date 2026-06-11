@@ -150,7 +150,7 @@ func (app *application) SearchHandler(w http.ResponseWriter, r *http.Request) {
 	// query vector
 	qVec := pgvector.NewVector(ToFloat32Vector(resp.Data[0].Embedding))
 
-	doc, err := app.store.Document.Get(ctx, qVec)
+	doc, err := app.store.Document.Get(ctx, query.Query, qVec)
 	if err != nil || len(doc) == 0 {
 		fmt.Fprintf(w, "data: I don't know\n\n")
 		flusher.Flush()

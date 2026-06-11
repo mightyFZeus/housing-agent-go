@@ -24,12 +24,13 @@ func (ds *DocumentStore) Count(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
-func (ds *DocumentStore) Get(ctx context.Context, qVec pgvector.Vector) ([]*models.Document, error) {
+// 1. Add rawQuery string to the parameters
+func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector.Vector) ([]*models.Document, error) {
 	var docs []*models.Document
 
 	err := ds.db.WithContext(ctx).
 		Raw(`
-	WITH vector_matches AS (
+			WITH vector_matches AS (
 				SELECT id, content, embedding <=> $1 AS distance,
 				       ROW_NUMBER() OVER (ORDER BY embedding <=> $1) as rank
 				FROM documents
@@ -46,13 +47,13 @@ func (ds *DocumentStore) Get(ctx context.Context, qVec pgvector.Vector) ([]*mode
 			SELECT 
 				COALESCE(v.id, k.id) as id,
 				COALESCE(v.content, k.content) as content,
-				COALESCE(v.distance, 1.0) as distance, -- Fallback high distance if keyword-only match
+				COALESCE(v.distance, 1.0) as distance, 
 				(COALESCE(1.0 / (60 + v.rank), 0.0) + COALESCE(1.0 / (60 + k.rank), 0.0)) as rrf_score
 			FROM vector_matches v
 			FULL OUTER JOIN keyword_matches k ON v.id = k.id
 			ORDER BY rrf_score DESC
 			LIMIT 5;
-		`, qVec).
+		`, qVec, rawQuery). // 2. Added rawQuery right here as the second argument ($2)
 		Scan(&docs).Error
 
 	if err != nil {
