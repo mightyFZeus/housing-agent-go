@@ -34,7 +34,7 @@ func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector
 				SELECT id, content, embedding <=> $1 AS distance,
 				       ROW_NUMBER() OVER (ORDER BY embedding <=> $1) as rank
 				FROM documents
-				WHERE (embedding <=> $1) <= 0.45
+				WHERE (embedding <=> $1) 
 				LIMIT 20
 			),
 			keyword_matches AS (
