@@ -27,9 +27,9 @@ func main() {
 		apiUrl: env.GetString("API_URL", "localhost:8080"),
 		db: dbConfig{
 			dbAddr:       env.GetString("DB_ADDR", "postgres://admin:adminpassword@localhost:5433/housing_agent_db?sslmode=disable"),
-			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 25),
-			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 25),
-			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
+			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 5),
+			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 2),
+			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "5m"),
 		},
 		env: env.GetString("ENV", "development"),
 	}
