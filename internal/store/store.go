@@ -14,10 +14,14 @@ type Storage struct {
 		Count(ctx context.Context) (int64, error)
 		Get(ctx context.Context, qVec pgvector.Vector) ([]*models.Document, error)
 	}
+	Log interface {
+		CreateLog(ctx context.Context, log *models.QueryLog) error
+	}
 }
 
 func NewStorage(db *gorm.DB) Storage {
 	return Storage{
 		Document: &DocumentStore{db: db},
+		Log:      &LogStore{db: db},
 	}
 }

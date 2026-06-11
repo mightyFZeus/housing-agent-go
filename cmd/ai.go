@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/mightyfzeus/housing-agent/internal/data"
@@ -146,6 +147,7 @@ func (app *application) SearchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// query vector
 	qVec := pgvector.NewVector(ToFloat32Vector(resp.Data[0].Embedding))
 
 	doc, err := app.store.Document.Get(ctx, qVec)
@@ -217,11 +219,18 @@ Question:
 	answer := full.String()
 
 	queryLog := models.QueryLog{
+		ID:             uuid.New(),
 		Question:       query.Query,
 		RetrievedChunk: context.String(),
 		Distance:       bestDistance,
 		Similarity:     classifyDistance(bestDistance),
 		Answer:         answer,
+		CreatedAt:      time.Now(),
+	}
+	if err := app.store.Log.CreateLog(ctx, &queryLog); err != nil {
+		app.logger.Errorf("failed to create rag query log: %v", err)
+	} else {
+		app.logger.Infof("query log inserted, id=%d", queryLog.ID)
 	}
 	queryLogJSON, marshalErr := json.MarshalIndent(queryLog, "", "  ")
 	if marshalErr != nil {

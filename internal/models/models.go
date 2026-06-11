@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/pgvector/pgvector-go"
 )
@@ -23,9 +25,11 @@ type RawChunk struct {
 }
 
 type QueryLog struct {
-	Question       string  `json:"question"`
-	RetrievedChunk string  `json:"retrieved_chunk"`
-	Distance       float64 `json:"distance"`
-	Similarity     string  `json:"similarity"`
-	Answer         string  `json:"answer"`
+	ID             uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Question       string    `json:"question"`
+	RetrievedChunk string    `json:"retrieved_chunk"`
+	Distance       float64   `json:"distance"`
+	Similarity     string    `json:"similarity"`
+	Answer         string    `json:"answer"`
+	CreatedAt      time.Time `gorm:"createdAt"`
 }

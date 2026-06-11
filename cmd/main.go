@@ -43,10 +43,7 @@ func main() {
 	if err != nil {
 		logger.Fatal("failed to connect to database", zap.Error(err))
 	}
-	// rdb, err := db.ConnectToRedis(cfg.redisDb.dBAddr, cfg.redisDb.username, cfg.redisDb.password)
-	// if err != nil {
-	// 	logger.Fatal("failed to redis  to database", zap.Error(err))
-	// }
+
 	sqlDB, err := gormDB.DB()
 	if err != nil {
 		logger.Fatal("error getting sqlDb from gormDB", zap.Error(err))
@@ -56,13 +53,10 @@ func main() {
 	if err := store.AutoMigrate(gormDB); err != nil {
 		logger.Fatal("error running migrations", zap.Error(err))
 	}
-	// if err := db.CreateIndexes(gormDB); err != nil {
-	// 	logger.Fatal("error creating indexes", zap.Error(err))
-	// }
+
 	defer sqlDB.Close()
 	logger.Info("db conncetion pool established")
 
-	// Start the application
 	// store
 	store := store.NewStorage(gormDB)
 
