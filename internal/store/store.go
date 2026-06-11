@@ -12,7 +12,7 @@ type Storage struct {
 	Document interface {
 		CreateDocment(ctx context.Context, doc *models.Document) error
 		Count(ctx context.Context) (int64, error)
-		Get(ctx context.Context, rawQuery string, qVec pgvector.Vector) ([]*models.Document, error)
+		Get(ctx context.Context, rawQuery string, qVec pgvector.Vector) ([]*models.Result, error)
 	}
 	Log interface {
 		CreateLog(ctx context.Context, log *models.QueryLog) error

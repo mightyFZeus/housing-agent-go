@@ -13,6 +13,7 @@ type Document struct {
 	Embedding  pgvector.Vector `gorm:"type:vector(1536)"`
 	Similarity float64         `gorm:"-"`
 	Distance   float64         `gorm:"column:distance"`
+	Score      float64         `gorm:"column:rrf_score"`
 }
 
 type RawChunk struct {
@@ -32,4 +33,12 @@ type QueryLog struct {
 	Similarity     string    `json:"similarity"`
 	Answer         string    `json:"answer"`
 	CreatedAt      time.Time `gorm:"createdAt"`
+}
+
+type Result struct {
+	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Content    string
+	Similarity float64 `gorm:"-"`
+	Distance   float64 `gorm:"column:distance"`
+	Score      float64 `gorm:"column:rrf_score"`
 }

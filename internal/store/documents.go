@@ -25,8 +25,8 @@ func (ds *DocumentStore) Count(ctx context.Context) (int64, error) {
 }
 
 // 1. Add rawQuery string to the parameters
-func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector.Vector) ([]*models.Document, error) {
-	var docs []*models.Document
+func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector.Vector) ([]*models.Result, error) {
+	var results []*models.Result
 
 	err := ds.db.WithContext(ctx).
 		Raw(`
@@ -71,11 +71,11 @@ func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector
 			ORDER BY rrf_score DESC
 			LIMIT 5;
 		`, qVec, rawQuery).
-		Scan(&docs).Error
+		Scan(&results).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	return docs, nil
+	return results, nil
 }
