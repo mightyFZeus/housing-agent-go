@@ -26,6 +26,9 @@ func (ds *DocumentStore) Count(ctx context.Context) (int64, error) {
 func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector.Vector) ([]*models.Result, error) {
 	var results []*models.Result
 
+	// TODO: Clean up the query for text search: remove quotes and extract key locations
+	// to make sure Postgres can locate them even inside messy text.
+
 	err := ds.db.WithContext(ctx).
 		Raw(`
 			WITH vector_matches AS (
@@ -43,12 +46,13 @@ func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector
 				SELECT
 					id,
 					content,
-					ts_rank_cd(tsv, plainto_tsquery('english', @rawQuery)) AS score,
+					ts_rank_cd(tsv, websearch_to_tsquery('english', @rawQuery)) AS score,
 					ROW_NUMBER() OVER (
-						ORDER BY ts_rank_cd(tsv, plainto_tsquery('english', @rawQuery)) DESC
+						ORDER BY ts_rank_cd(tsv, websearch_to_tsquery('english', @rawQuery)) DESC
 					) AS rank
 				FROM documents
-				WHERE tsv @@ plainto_tsquery('english', @rawQuery)
+				-- FIX 1: websearch_to_tsquery allows flexible OR matching instead of strict AND matching
+				WHERE tsv @@ websearch_to_tsquery('english', @rawQuery)
 				LIMIT 20
 			)
 
@@ -63,7 +67,9 @@ func (ds *DocumentStore) Get(ctx context.Context, rawQuery string, qVec pgvector
 			FROM vector_matches v
 			FULL OUTER JOIN keyword_matches k ON v.id = k.id
 			ORDER BY rrf_score DESC
-			LIMIT 5;
+			-- FIX 2: Increased from 5 to 8 to ensure multi-hop contexts (Exemptions + Rules) 
+			-- can coexist simultaneously in the LLM prompt.
+			LIMIT 8; 
 		`, map[string]interface{}{
 			"qVec":     qVec,
 			"rawQuery": rawQuery,
