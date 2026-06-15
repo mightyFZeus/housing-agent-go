@@ -209,12 +209,12 @@ Question:
 
 			full.WriteString(chunk)
 
-			b, err := json.Marshal(chunk)
-			if err != nil {
-				continue
-			}
-			fmt.Fprintf(w, "data: %s\n\n", string(b))
+			safeChunk := strings.ReplaceAll(chunk, "\n", "\\n")
+			safeChunk = strings.ReplaceAll(safeChunk, "\r", "\\r")
+
+			fmt.Fprintf(w, "data: %s\n\n", safeChunk)
 			flusher.Flush()
+
 		}
 	}
 
