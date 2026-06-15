@@ -71,6 +71,6 @@ func main() {
 	}
 
 	mux := app.mount()
-	go app.EmbedDocuments()
+	// go app.EmbedDocuments()
 	logger.Fatal(app.run(mux))
 }

@@ -99,18 +99,8 @@ func (app *application) EmbedDocuments() {
 }
 
 func (app *application) SearchHandler(w http.ResponseWriter, r *http.Request) {
+
 	ctx := r.Context()
-
-	// SSE headers
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		app.internalServerError(w, r, errors.New("streaming unsupported"))
-		return
-	}
 
 	var query SearchRequest
 	if err := json.NewDecoder(r.Body).Decode(&query); err != nil {
@@ -151,8 +141,20 @@ func (app *application) SearchHandler(w http.ResponseWriter, r *http.Request) {
 	qVec := pgvector.NewVector(ToFloat32Vector(resp.Data[0].Embedding))
 
 	doc, err := app.store.Document.Get(ctx, query.Query, qVec)
+
+	// SSE headers
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		app.internalServerError(w, r, errors.New("streaming unsupported"))
+		return
+	}
+
 	if err != nil || len(doc) == 0 {
-		fmt.Fprintf(w, "data: I don't know\n\n")
+		fmt.Fprintf(w, "data: \"I don't know\"\n\n")
 		flusher.Flush()
 		return
 	}
@@ -192,6 +194,8 @@ Question:
 		},
 	})
 
+	defer stream.Close()
+
 	var full strings.Builder
 
 	for stream.Next() {
@@ -205,7 +209,11 @@ Question:
 
 			full.WriteString(chunk)
 
-			fmt.Fprintf(w, "data: %s\n\n", chunk)
+			b, err := json.Marshal(chunk)
+			if err != nil {
+				continue
+			}
+			fmt.Fprintf(w, "data: %s\n\n", string(b))
 			flusher.Flush()
 		}
 	}
@@ -230,7 +238,7 @@ Question:
 	if err := app.store.Log.CreateLog(ctx, &queryLog); err != nil {
 		app.logger.Errorf("failed to create rag query log: %v", err)
 	} else {
-		app.logger.Infof("query log inserted, id=%d", queryLog.ID)
+		app.logger.Infof("query log inserted, id=%s", queryLog.ID)
 	}
 	queryLogJSON, marshalErr := json.MarshalIndent(queryLog, "", "  ")
 	if marshalErr != nil {
